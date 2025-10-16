@@ -1,0 +1,54 @@
+# .github/workflows/ci.yml
+name: Continuous Integration (CI) Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  run-tests:
+    name: Run Unit Tests and Generate Report
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Выгрузка репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Шаг 2: Настройка окружения (установка Python)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # Шаг 3: Установка необходимых модулей
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      # Шаг 4: Проведение модульных тестов с генерацией HTML-отчета
+      - name: Run tests with pytest
+        run: |
+          pytest --html=report.html --self-contained-html
+
+      # Шаг 5: Выгрузка отчета с тестами в виде артефакта
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: report.html
+
+  # Job 2: Выгрузка кода при успешном прохождении тестов
+  upload-code-on-success:
+    name: Upload Source Code on Success
+    runs-on: ubuntu-latest
+    needs: run-tests  # Запустится только если тесты прошли успешно
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Шаг 6: Выгрузка кода в виде артефакта
+      - name: Upload source code
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-source-code
+          path: .
